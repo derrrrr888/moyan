@@ -29,13 +29,14 @@ export default function WritePage() {
       return
     }
 
-    // 内容安全检测
-    const { checkArticle } = await import('../lib/moderation')
-    const check = checkArticle(title, summary, content)
-    if (!check.clean) {
-      setError(`${check.field}：${check.reason}，请修改后重新提交`)
-      return
-    }
+        // 内容安全检测
+        const { checkArticle } = await import('../lib/moderation')
+        const check = checkArticle(title, summary, content)
+        if (!check.clean) {
+          setError(`${check.field}：${check.reason}，请修改后重新提交`)
+          setLoading(false)
+          return
+        }
 
     setLoading(true)
     setError('')

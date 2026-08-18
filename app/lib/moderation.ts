@@ -12,12 +12,15 @@ const DANGER_PATTERNS = [
     /(加微信|加QQ|加薇|加V|联系方式|扫码)[\s\S]{0,10}\d{5,}/i,
   ];
   
-  export function checkContent(text: string): {
+  export interface CheckResult {
     clean: boolean;
-    reason?: string;
+    reason: string;
     level: 'safe' | 'suspect' | 'danger';
-  } {
-    if (!text || text.trim().length === 0) return { clean: true, level: 'safe' };
+    field: string;
+  }
+  
+  export function checkContent(text: string): Omit<CheckResult, 'field'> {
+    if (!text || text.trim().length === 0) return { clean: true, reason: '', level: 'safe' };
   
     for (const pattern of DANGER_PATTERNS) {
       if (pattern.test(text)) {
@@ -30,15 +33,10 @@ const DANGER_PATTERNS = [
       return { clean: false, reason: '疑似垃圾广告', level: 'suspect' };
     }
   
-    return { clean: true, level: 'safe' };
+    return { clean: true, reason: '', level: 'safe' };
   }
   
-  export function checkArticle(title: string, summary: string, content: string): {
-    clean: boolean;
-    reason?: string;
-    level: 'safe' | 'suspect' | 'danger';
-    field?: string;
-  } {
+  export function checkArticle(title: string, summary: string, content: string): CheckResult {
     const fields = [
       { name: '标题', text: title },
       { name: '摘要', text: summary },
@@ -48,8 +46,8 @@ const DANGER_PATTERNS = [
     for (const field of fields) {
       const result = checkContent(field.text);
       if (!result.clean) {
-        return { ...result, field: field.name };
+        return { clean: false, reason: result.reason, level: result.level, field: field.name };
       }
     }
-    return { clean: true, level: 'safe' };
+    return { clean: true, reason: '', level: 'safe', field: '' };
   }
