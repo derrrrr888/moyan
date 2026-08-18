@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
@@ -20,7 +20,7 @@ interface Article {
   likes: number
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   
@@ -295,5 +295,13 @@ export default function Home() {
 
       <ScrollToTop />
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center text-[#8a8a8a]">加载中...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }
