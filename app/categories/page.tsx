@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import ScrollToTop from "../components/ScrollToTop";
 
 export default async function CategoriesPage() {
   const { data: articles } = await supabase
     .from("articles")
-    .select("category");
+    .select("category")
+    .eq("is_hidden", false);
 
-  // 统计每个分类的文章数量
   const categoryCount: Record<string, number> = {};
   articles?.forEach((article) => {
     categoryCount[article.category] = (categoryCount[article.category] || 0) + 1;
@@ -28,7 +29,7 @@ export default async function CategoriesPage() {
           <div className="flex gap-8 text-sm text-[#6b6b6b]">
             <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
             <span className="text-[#8b7355] font-medium">分类</span>
-            <span className="hover:text-[#8b7355] transition-colors cursor-pointer">关于</span>
+            <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
           </div>
         </div>
       </nav>
@@ -60,6 +61,8 @@ export default async function CategoriesPage() {
           <p className="mt-2">拾墨杂谈 © 2026</p>
         </div>
       </footer>
+
+      <ScrollToTop />
     </div>
   );
 }

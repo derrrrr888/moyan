@@ -2,25 +2,46 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { supabase } from '../lib/supabase'
+import { useRouter, useParams } from 'next/navigation'
+import { supabase } from '../../../lib/supabase'
 
-export default function WritePage() {
+export default function EditArticlePage() {
+  const params = useParams()
+  const router = useRouter()
+  const id = parseInt(params.id as string)
+
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('散文')
   const [summary, setSummary] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
-  const router = useRouter()
 
   useEffect(() => {
-    async function checkAuth() {
+    async function load() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) router.push('/login')
+      const user = session?.user
+      if (!user) { router.push('/login'); return }
+
+      const { data: article } = await supabase.from('articles').select('*').eq('id', id).single()
+      if (!article) { router.push('/'); return }
+
+      const userName = user.user_metadata?.name || user.email?.split('@')[0]
+      if (userName !== article.author) {
+        alert('你没有权限编辑这篇文章')
+        router.push(`/article/${id}`)
+        return
+      }
+
+      setTitle(article.title)
+      setCategory(article.category)
+      setSummary(article.summary || '')
+      setContent(article.content)
+      setFetching(false)
     }
-    checkAuth()
-  }, [router])
+    load()
+  }, [id, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,48 +49,31 @@ export default function WritePage() {
       setError('标题和正文不能为空')
       return
     }
-
-    // 内容安全检测
-    const { checkArticle } = await import('../lib/moderation')
-    const check = checkArticle(title, summary, content)
-    if (!check.clean) {
-      setError(`${check.field}：${check.reason}，请修改后重新提交`)
-      return
-    }
-
     setLoading(true)
-    setError('')
 
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    const userName = user.user_metadata?.name || user.email?.split('@')[0]
-
-    const { error: err } = await supabase.from('articles').insert({
+    const { error: err } = await supabase.from('articles').update({
       title: title.trim(),
       category,
       summary: summary.trim() || content.trim().slice(0, 100) + '...',
       content: content.trim(),
-      author: userName,
-      date: new Date().toISOString().split('T')[0],
-      views: 0,
-      likes: 0,
-      is_hidden: false,
-      is_flagged: false,
-    })
+    }).eq('id', id)
 
     if (err) {
-      setError('发布失败：' + err.message)
+      setError('更新失败：' + err.message)
       setLoading(false)
     } else {
-      alert('发布成功！')
-      router.push('/')
+      alert('更新成功！')
+      router.push(`/article/${id}`)
       router.refresh()
     }
+  }
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center">
+        <div className="text-sm text-[#8a8a8a]">加载中...</div>
+      </div>
+    )
   }
 
   return (
@@ -77,12 +81,12 @@ export default function WritePage() {
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-wider">拾墨杂谈</Link>
-          <Link href="/" className="text-sm text-[#6b6b6b] hover:text-[#8b7355]">← 返回首页</Link>
+          <Link href={`/article/${id}`} className="text-sm text-[#6b6b6b] hover:text-[#8b7355]">← 返回文章</Link>
         </div>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold mb-8 text-center">写文章</h1>
+        <h1 className="text-2xl font-bold mb-8 text-center">编辑文章</h1>
 
         {error && (
           <div className="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>
@@ -120,13 +124,13 @@ export default function WritePage() {
           </div>
 
           <div className="flex justify-end gap-4">
-            <Link href="/"
+            <Link href={`/article/${id}`}
               className="px-6 py-2 border border-[#e8e4dc] text-[#6b6b6b] rounded-lg hover:bg-[#f0ece4] transition-colors text-sm text-center">
               取消
             </Link>
             <button type="submit" disabled={loading}
               className="px-6 py-2 bg-[#8b7355] text-white rounded-lg hover:bg-[#6b5a45] transition-colors disabled:opacity-50 text-sm">
-              {loading ? '发布中...' : '发布文章'}
+              {loading ? '保存中...' : '保存修改'}
             </button>
           </div>
         </form>

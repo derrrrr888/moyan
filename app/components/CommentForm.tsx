@@ -13,8 +13,15 @@ export default function CommentForm({ articleId }: { articleId: number }) {
     e.preventDefault()
     if (!content.trim()) return
 
-    setLoading(true)
+    // 内容安全检测
+    const { checkContent } = await import('../lib/moderation')
+    const check = checkContent(content)
+    if (!check.clean) {
+      alert('评论' + check.reason + '，请修改后重新提交')
+      return
+    }
 
+    setLoading(true)
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user
 
@@ -23,6 +30,8 @@ export default function CommentForm({ articleId }: { articleId: number }) {
       author: user?.user_metadata?.name || user?.email?.split('@')[0] || '匿名读者',
       content: content.trim(),
       date: new Date().toISOString().split('T')[0],
+      likes: 0,
+      is_hidden: false,
     })
 
     if (error) {
@@ -31,27 +40,26 @@ export default function CommentForm({ articleId }: { articleId: number }) {
       setContent('')
       router.refresh()
     }
-
     setLoading(false)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="pt-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="写下你的想法..."
-        className="w-full p-4 bg-[#f7f4ef] border border-[#e8e4dc] rounded-lg text-sm placeholder:text-[#a0a0a0] focus:outline-none focus:border-[#8b7355] resize-none"
-        rows={4}
+        placeholder="写下你的评论..."
+        className="w-full p-3 bg-[#f7f4ef] border border-[#e8e4dc] rounded-lg text-sm placeholder:text-[#a0a0a0] focus:outline-none focus:border-[#8b7355] resize-none"
+        rows={3}
         required
       />
-      <div className="flex justify-end mt-3">
+      <div className="flex justify-end">
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-[#8b7355] text-white text-sm rounded-lg hover:bg-[#6b5a45] transition-colors disabled:opacity-50"
+          className="px-4 py-2 bg-[#8b7355] text-white text-sm rounded-lg hover:bg-[#6b5a45] transition-colors disabled:opacity-50"
         >
-          {loading ? '提交中...' : '提交评论'}
+          {loading ? '提交中...' : '发表评论'}
         </button>
       </div>
     </form>

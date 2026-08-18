@@ -1,44 +1,36 @@
 import Link from "next/link";
-import { supabase } from "./lib/supabase";
-import AuthButton from "./components/AuthButton";
+import { supabase } from "../../lib/supabase";
 
-export default async function Home() {
+export default async function UserPage({ params }: { params: Promise<{ name: string }> }) {
+  const { name } = await params;
+  const authorName = decodeURIComponent(name);
+
   const { data: articles } = await supabase
     .from("articles")
     .select("*")
+    .eq("author", authorName)
+    .eq("is_hidden", false)
     .order("date", { ascending: false });
-
-    <div className="flex items-center gap-8 text-sm text-[#6b6b6b]">
-    <span className="text-[#8b7355] font-medium">首页</span>
-    <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
-    <span className="hover:text-[#8b7355] transition-colors cursor-pointer">关于</span>
-    <AuthButton />
-  </div>
 
   return (
     <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-wider">拾墨杂谈</div>
-          <div className="flex items-center gap-8 text-sm text-[#6b6b6b]">
-          <div className="flex items-center gap-8 text-sm text-[#6b6b6b]">
-  <span className="text-[#8b7355] font-medium">首页</span>
-  <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
-  <span className="hover:text-[#8b7355] transition-colors cursor-pointer">关于</span>
-  <AuthButton />
-</div>
-            <AuthButton />
+          <Link href="/" className="text-xl font-bold tracking-wider">拾墨杂谈</Link>
+          <div className="flex gap-8 text-sm text-[#6b6b6b]">
+            <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
+            <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
+            <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
           </div>
         </div>
       </nav>
 
-      <header className="max-w-3xl mx-auto px-6 pt-16 pb-8 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-wider">
-          拾墨杂谈
-        </h1>
-        <p className="text-[#8a8a8a] text-sm md:text-base">
-          以文字为舟，载思想而行。记录文字里的温度与思考。
-        </p>
+      <header className="max-w-3xl mx-auto px-6 pt-12 pb-8 text-center">
+        <div className="w-20 h-20 rounded-full bg-[#e8e4dc] flex items-center justify-center text-2xl text-[#8b7355] mx-auto mb-4">
+          {authorName[0]}
+        </div>
+        <h1 className="text-2xl font-bold mb-2">{authorName}</h1>
+        <p className="text-sm text-[#8a8a8a]">共 {articles?.length || 0} 篇作品</p>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 pb-16">
@@ -59,15 +51,14 @@ export default async function Home() {
                   <p className="text-sm text-[#6b6b6b] leading-relaxed mb-4 line-clamp-3">
                     {article.summary}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#8a8a8a]">作者：{article.author}</span>
-                    <span className="text-xs text-[#8b7355]">阅读全文 →</span>
+                  <div className="flex items-center justify-between text-xs text-[#8a8a8a]">
+                    <span>{article.views || 0} 次阅读 · {article.likes || 0} 赞</span>
                   </div>
                 </article>
               </Link>
             ))
           ) : (
-            <div className="text-center text-[#8a8a8a] py-12">暂无文章</div>
+            <div className="text-center text-[#8a8a8a] py-12">该作者暂无文章</div>
           )}
         </div>
       </main>
