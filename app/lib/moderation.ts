@@ -1,5 +1,4 @@
 // 内容安全检测
-// 如需更严格，上线后接入云文本审核API（阿里云/腾讯云内容安全）
 
 const DANGER_PATTERNS = [
     /(?:法轮|flg|falun)/i,
@@ -34,15 +33,23 @@ const DANGER_PATTERNS = [
     return { clean: true, level: 'safe' };
   }
   
-  export function checkArticle(title: string, summary: string, content: string) {
+  export function checkArticle(title: string, summary: string, content: string): {
+    clean: boolean;
+    reason?: string;
+    level: 'safe' | 'suspect' | 'danger';
+    field?: string;
+  } {
     const fields = [
       { name: '标题', text: title },
       { name: '摘要', text: summary },
       { name: '正文', text: content },
     ];
+  
     for (const field of fields) {
       const result = checkContent(field.text);
-      if (!result.clean) return { ...result, field: field.name };
+      if (!result.clean) {
+        return { ...result, field: field.name };
+      }
     }
-    return { clean: true, level: 'safe' as const };
+    return { clean: true, level: 'safe' };
   }
