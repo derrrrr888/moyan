@@ -9,6 +9,13 @@ import FavoriteButton from "../../components/FavoriteButton";
 import ShareButton from "../../components/ShareButton";
 import ScrollToTop from "../../components/ScrollToTop";
 
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const { data: articles } = await supabase.from("articles").select("id").eq("is_hidden", false);
+  return (articles || []).map((a) => ({ id: String(a.id) }));
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const articleId = parseInt(id);
@@ -20,10 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     .single();
 
   if (!article) return { title: "文章未找到 | 拾墨杂谈" };
-  return {
-    title: article.title,
-    description: article.summary,
-  };
+  return { title: article.title, description: article.summary };
 }
 
 function buildCommentTree(comments: any[]) {
@@ -44,40 +48,20 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const articleId = parseInt(id);
 
-  const { data: article } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("id", articleId)
-    .eq("is_hidden", false)
-    .single();
+  // 并行查询：文章 + 评论同时拉取
+  const [{ data: article }, { data: commentsRaw }] = await Promise.all([
+    supabase.from("articles").select("*").eq("id", articleId).eq("is_hidden", false).single(),
+    supabase.from("comments").select("*").eq("article_id", articleId).eq("is_hidden", false).order("date", { ascending: true })
+  ]);
 
-   // 浏览量+1 放到后台，不阻塞页面加载
-   if (article) {
-    supabase
-      .from("articles")
-      .update({ views: (article.views || 0) + 1 })
-      .eq("id", articleId)
-      .then(() => {})
-      .catch(() => {});
+  // 浏览量+1 纯后台，不阻塞不等待
+  if (article) {
+    supabase.from("articles").update({ views: (article.views || 0) + 1 }).eq("id", articleId).then(() => {}).catch(() => {});
   }
 
-  const { data: updatedArticle } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("id", articleId)
-    .eq("is_hidden", false)
-    .single();
+  const commentTree = buildCommentTree(commentsRaw || []);
 
-  const { data: comments } = await supabase
-    .from("comments")
-    .select("*")
-    .eq("article_id", articleId)
-    .eq("is_hidden", false)
-    .order("date", { ascending: true });
-
-  const commentTree = buildCommentTree(comments || []);
-
-  if (!updatedArticle) {
+  if (!article) {
     return (
       <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center text-[#3d3d3d]">
         <div className="text-center">
@@ -92,9 +76,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-[#3d3d3d] tracking-wider">
-            拾墨杂谈
-          </Link>
+          <Link href="/" className="text-xl font-bold text-[#3d3d3d] tracking-wider">拾墨杂谈</Link>
           <div className="flex gap-8 text-sm text-[#6b6b6b]">
             <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
             <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
@@ -106,33 +88,33 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
       <main className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-10 text-center">
           <div className="inline-block px-3 py-1 text-xs text-[#8b7355] border border-[#e8e4dc] rounded-full mb-4">
-            {updatedArticle.category}
+            {article.category}
           </div>
-          <h1 className="text-3xl font-bold mb-4 tracking-wide">{updatedArticle.title}</h1>
+          <h1 className="text-3xl font-bold mb-4 tracking-wide">{article.title}</h1>
           <div className="text-sm text-[#8a8a8a] flex items-center justify-center gap-3 flex-wrap">
-            <Link href={`/user/${encodeURIComponent(updatedArticle.author)}`} className="hover:text-[#8b7355] transition-colors">
-              {updatedArticle.author}
+            <Link href={`/user/${encodeURIComponent(article.author)}`} className="hover:text-[#8b7355] transition-colors">
+              {article.author}
             </Link>
             <span>·</span>
-            <span>{updatedArticle.date}</span>
+            <span>{article.date}</span>
             <span>·</span>
-            <span>{updatedArticle.views || 0} 次阅读</span>
+            <span>{article.views || 0} 次阅读</span>
           </div>
         </div>
 
         <article className="bg-[#fefdfb] rounded-lg p-8 md:p-12 shadow-sm mb-8">
           <div className="prose prose-lg max-w-none whitespace-pre-wrap text-[#3d3d3d] leading-[2] text-base md:text-lg">
-            {updatedArticle.content}
+            {article.content}
           </div>
         </article>
 
         <div className="flex items-center justify-center gap-8 mb-8">
-          <LikeButton id={articleId} initialLikes={updatedArticle.likes || 0} size="md" />
+          <LikeButton id={articleId} initialLikes={article.likes || 0} size="md" />
           <FavoriteButton articleId={articleId} />
           <ShareButton />
         </div>
 
-        <ArticleActions article={updatedArticle} />
+        <ArticleActions article={article} />
 
         <div className="mb-12 mt-8">
           <Link href="/" className="inline-flex items-center text-[#8b7355] hover:text-[#6b5a45] transition-colors text-sm">
@@ -142,7 +124,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 
         <div className="bg-[#fefdfb] rounded-lg p-8 shadow-sm">
           <h3 className="text-lg font-bold mb-6 pb-4 border-b border-[#e8e4dc]">
-            评论 ({comments?.length || 0})
+            评论 ({commentsRaw?.length || 0})
           </h3>
           <div className="space-y-6 mb-8">
             {commentTree.length > 0 ? (
