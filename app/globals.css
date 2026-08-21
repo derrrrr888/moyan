@@ -123,3 +123,31 @@ a {
 .content-reveal {
   animation: fade-up 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+/* ========== 水墨按住扩散动画 ========== */
+@keyframes ink-ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.35;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+.ink-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,115,85,0.25) 0%, rgba(139,115,85,0) 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.ink-ripple.active {
+  animation: ink-ripple 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

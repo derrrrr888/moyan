@@ -220,48 +220,51 @@ function HomeContent() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {articles.map((article) => (
-                             <article
-                             key={article.id}
-                             className={`bg-[#fefdfb] rounded-lg p-6 shadow-sm border border-[#f0ece4] hover:shadow-md transition-all duration-150 cursor-pointer select-none ${pressingId === article.id ? 'scale-[0.97] bg-[#f5f2ed]' : ''}`}
-                             onMouseDown={() => setPressingId(article.id)}
-                             onMouseUp={() => setPressingId(null)}
-                             onMouseLeave={() => setPressingId(null)}
-                             onTouchStart={() => setPressingId(article.id)}
-                             onTouchEnd={() => setPressingId(null)}
-                           >
-                             <Link href={`/article/${article.id}`} prefetch={true}>
-                               <div className="flex items-center gap-3 mb-3">
-                                 <span className="text-xs text-[#8b7355] border border-[#e8e4dc] px-2 py-0.5 rounded-full">
-                                   {article.category}
-                                 </span>
-                                 <span className="text-xs text-[#8a8a8a]">{article.date}</span>
-                               </div>
-                               <h2 className="text-lg font-bold mb-3 hover:text-[#8b7355] transition-colors line-clamp-2">
-                                 {article.title}
-                               </h2>
-                               <p className="text-sm text-[#6b6b6b] leading-relaxed mb-4 line-clamp-3">
-                                 {article.summary}
-                               </p>
-                             </Link>
-                             <div className="flex items-center justify-between text-xs text-[#8a8a8a]">
-                               <div className="flex items-center gap-3">
-                                 <Link
-                                   href={`/user/${encodeURIComponent(article.author)}`}
-                                   className="hover:text-[#8b7355] transition-colors"
-                                 >
-                                   {article.author}
-                                 </Link>
-                                 <span>·</span>
-                                 <span>{article.views || 0} 次阅读</span>
-                               </div>
-                               <div className="flex items-center gap-1.5 text-[#8a8a8a]">
-                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 fill-none">
-                                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                 </svg>
-                                 <span>{article.likes || 0}</span>
-                               </div>
-                             </div>
-                           </article>
+                                           <article
+                                           key={article.id}
+                                           className={`relative overflow-hidden bg-[#fefdfb] rounded-lg p-6 shadow-sm border border-[#f0ece4] hover:shadow-md transition-all duration-150 cursor-pointer select-none ${pressingId === article.id ? 'scale-[0.97] bg-[#f5f2ed]' : ''}`}
+                                           onMouseDown={() => setPressingId(article.id)}
+                                           onMouseUp={() => setPressingId(null)}
+                                           onMouseLeave={() => setPressingId(null)}
+                                           onTouchStart={() => setPressingId(article.id)}
+                                           onTouchEnd={() => setPressingId(null)}
+                                         >
+                                           {/* 水墨扩散动画层 */}
+                                           <div className={`ink-ripple ${pressingId === article.id ? 'active' : ''}`} />
+                           
+                                           <Link href={`/article/${article.id}`} prefetch={true} className="relative z-10 block">
+                                             <div className="flex items-center gap-3 mb-3">
+                                               <span className="text-xs text-[#8b7355] border border-[#e8e4dc] px-2 py-0.5 rounded-full">
+                                                 {article.category}
+                                               </span>
+                                               <span className="text-xs text-[#8a8a8a]">{article.date}</span>
+                                             </div>
+                                             <h2 className="text-lg font-bold mb-3 hover:text-[#8b7355] transition-colors line-clamp-2">
+                                               {article.title}
+                                             </h2>
+                                             <p className="text-sm text-[#6b6b6b] leading-relaxed mb-4 line-clamp-3">
+                                               {article.summary}
+                                             </p>
+                                           </Link>
+                                           <div className="relative z-10 flex items-center justify-between text-xs text-[#8a8a8a]">
+                                             <div className="flex items-center gap-3">
+                                               <Link
+                                                 href={`/user/${encodeURIComponent(article.author)}`}
+                                                 className="hover:text-[#8b7355] transition-colors"
+                                               >
+                                                 {article.author}
+                                               </Link>
+                                               <span>·</span>
+                                               <span>{article.views || 0} 次阅读</span>
+                                             </div>
+                                             <div className="flex items-center gap-1.5 text-[#8a8a8a]">
+                                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 fill-none">
+                                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                               </svg>
+                                               <span>{article.likes || 0}</span>
+                                             </div>
+                                           </div>
+                                         </article>
               ))}
             </div>
 
