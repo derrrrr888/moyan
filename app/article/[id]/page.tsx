@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Metadata } from "next";
 import { supabase } from "../../lib/supabase";
 import CommentForm from "../../components/CommentForm";
 import LikeButton from "../../components/LikeButton";
@@ -7,6 +8,23 @@ import ArticleActions from "../../components/ArticleActions";
 import FavoriteButton from "../../components/FavoriteButton";
 import ShareButton from "../../components/ShareButton";
 import ScrollToTop from "../../components/ScrollToTop";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const articleId = parseInt(id);
+  const { data: article } = await supabase
+    .from("articles")
+    .select("title,summary")
+    .eq("id", articleId)
+    .eq("is_hidden", false)
+    .single();
+
+  if (!article) return { title: "文章未找到 | 拾墨杂谈" };
+  return {
+    title: article.title,
+    description: article.summary,
+  };
+}
 
 function buildCommentTree(comments: any[]) {
   const map = new Map<number, any>();
