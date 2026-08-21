@@ -13,14 +13,25 @@ export default async function UserPage({ params }: { params: Promise<{ name: str
     .eq("is_hidden", false)
     .order("date", { ascending: false });
 
+  const { count: followers } = await supabase
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("following_name", authorName);
+
+  const { count: following } = await supabase
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("follower_name", authorName);
+
   return (
-    <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
+    <div className="min-h-screen bg-[#f7f4ef] font-wenkai text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-wider">拾墨杂谈</Link>
           <div className="flex gap-8 text-sm text-[#6b6b6b]">
             <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
             <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
+            <Link href="/following" className="hover:text-[#8b7355] transition-colors">关注</Link>
             <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
           </div>
         </div>
@@ -33,6 +44,10 @@ export default async function UserPage({ params }: { params: Promise<{ name: str
         <h1 className="text-2xl font-bold mb-2">{authorName}</h1>
         <div className="flex items-center justify-center gap-4 text-sm text-[#8a8a8a] mb-4">
           <span>共 {articles?.length || 0} 篇作品</span>
+          <span>·</span>
+          <span>{followers || 0} 粉丝</span>
+          <span>·</span>
+          <span>{following || 0} 关注</span>
         </div>
         <FollowButton targetName={authorName} />
       </header>
