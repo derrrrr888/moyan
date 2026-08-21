@@ -107,7 +107,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      <main className="max-w-3xl mx-auto px-6 py-<main className="max-w-3xl mx-auto px-6 py-12 content-reveal"></div>12">
         <div className="mb-10 text-center">
           <div className="inline-block px-3 py-1 text-xs text-[#8b7355] border border-[#e8e4dc] rounded-full mb-4">
             {article.category}

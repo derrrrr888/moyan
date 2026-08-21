@@ -30,7 +30,7 @@ function HomeContent() {
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [total, setTotal] = useState(0)
-  
+  const [pressingId, setPressingId] = useState<number | null>(null)
   const q = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || 'latest'
   const isHot = sort === 'hot'
@@ -220,7 +220,15 @@ function HomeContent() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {articles.map((article) => (
-                <article key={article.id} className="bg-[#fefdfb] rounded-lg p-6 shadow-sm border border-[#f0ece4] hover:shadow-md transition-shadow">
+                <article key={article.id} cla              <article
+                key={article.id}
+                className={`bg-[#fefdfb] rounded-lg p-6 shadow-sm border border-[#f0ece4] hover:shadow-md transition-all duration-150 cursor-pointer select-none ${pressingId === article.id ? 'scale-[0.97] bg-[#f5f2ed]' : ''}`}
+                onMouseDown={() => setPressingId(article.id)}
+                onMouseUp={() => setPressingId(null)}
+                onMouseLeave={() => setPressingId(null)}
+                onTouchStart={() => setPressingId(article.id)}
+                onTouchEnd={() => setPressingId(null)}
+              >ssName="bg-[#fefdfb] rounded-lg p-6 shadow-sm border border-[#f0ece4] hover:shadow-md transition-shadow">
                   <Link href={`/article/${article.id}`} prefetch={true}>
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-xs text-[#8b7355] border border-[#e8e4dc] px-2 py-0.5 rounded-full">

@@ -86,3 +86,40 @@ input[type="submit"]:active {
 a {
   transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
+/* ========== 墨迹晕染加载动画 ========== */
+@keyframes ink-spread {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.15);
+    transform-origin: left;
+  }
+  50% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0.35;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 骨架屏元素依次晕染 */
+.ink-line {
+  animation: ink-spread 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+/* 内容进入 */
+.content-reveal {
+  animation: fade-up 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
