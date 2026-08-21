@@ -1,139 +1,165 @@
-'use client'
+import Link from "next/link";
+import { Metadata } from "next";
+import { unstable_cache } from 'next/cache';
+import { supabase } from "../../lib/supabase";
+import CommentForm from "../../components/CommentForm";
+import LikeButton from "../../components/LikeButton";
+import CommentItem from "../../components/CommentItem";
+import ArticleActions from "../../components/ArticleActions";
+import FavoriteButton from "../../components/FavoriteButton";
+import ShareButton from "../../components/ShareButton";
+import ScrollToTop from "../../components/ScrollToTop";
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '../../../lib/supabase'
+export const dynamic = 'force-static';
+export const revalidate = 3600;
 
-export default function EditArticlePage() {
-  const params = useParams()
-  const router = useRouter()
-  const id = parseInt(params.id as string)
+export async function generateStaticParams() {
+  const { data: articles } = await supabase.from("articles").select("id").eq("is_hidden", false);
+  return (articles || []).map((a) => ({ id: String(a.id) }));
+}
 
-  const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('散文')
-  const [summary, setSummary] = useState('')
-  const [content, setContent] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(true)
-  const [error, setError] = useState('')
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const articleId = parseInt(id);
+  
+  const getArticle = unstable_cache(
+    async (id: number) => {
+      const { data } = await supabase.from("articles").select("title,summary").eq("id", id).eq("is_hidden", false).single();
+      return data;
+    },
+    ['article-meta'],
+    { revalidate: 3600 }
+  );
+  
+  const article = await getArticle(articleId);
+  if (!article) return { title: "文章未找到 | 拾墨杂谈" };
+  return { title: article.title, description: article.summary };
+}
 
-  useEffect(() => {
-    async function load() {
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user
-      if (!user) { router.push('/login'); return }
-
-      const { data: article } = await supabase.from('articles').select('*').eq('id', id).single()
-      if (!article) { router.push('/'); return }
-
-      const userName = user.user_metadata?.name || user.email?.split('@')[0]
-      if (userName !== article.author) {
-        alert('你没有权限编辑这篇文章')
-        router.push(`/article/${id}`)
-        return
-      }
-
-      setTitle(article.title)
-      setCategory(article.category)
-      setSummary(article.summary || '')
-      setContent(article.content)
-      setFetching(false)
-    }
-    load()
-  }, [id, router])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim() || !content.trim()) {
-      setError('标题和正文不能为空')
-      return
-    }
-    setLoading(true)
-
-    const { error: err } = await supabase.from('articles').update({
-      title: title.trim(),
-      category,
-      summary: summary.trim() || content.trim().slice(0, 100) + '...',
-      content: content.trim(),
-    }).eq('id', id)
-
-    if (err) {
-      setError('更新失败：' + err.message)
-      setLoading(false)
+function buildCommentTree(comments: any[]) {
+  const map = new Map<number, any>();
+  const roots: any[] = [];
+  comments.forEach((c) => { map.set(c.id, { ...c, children: [] }); });
+  comments.forEach((c) => {
+    if (c.parent_id && map.has(c.parent_id)) {
+      map.get(c.parent_id)!.children.push(map.get(c.id));
     } else {
-      alert('更新成功！')
-      router.push(`/article/${id}`)
-      router.refresh()
+      roots.push(map.get(c.id));
     }
+  });
+  return roots;
+}
+
+export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const articleId = parseInt(id);
+
+  const getArticle = unstable_cache(
+    async (id: number) => {
+      const { data } = await supabase.from("articles").select("*").eq("id", id).eq("is_hidden", false).single();
+      return data;
+    },
+    ['article-detail'],
+    { revalidate: 3600 }
+  );
+
+  const getComments = unstable_cache(
+    async (id: number) => {
+      const { data } = await supabase.from("comments").select("*").eq("article_id", id).eq("is_hidden", false).order("date", { ascending: true });
+      return data;
+    },
+    ['article-comments'],
+    { revalidate: 60 }
+  );
+
+  const [article, commentsRaw] = await Promise.all([
+    getArticle(articleId),
+    getComments(articleId),
+  ]);
+
+  if (article) {
+    supabase.from("articles").update({ views: (article.views || 0) + 1 }).eq("id", articleId).then(() => {}).catch(() => {});
   }
 
-  if (fetching) {
+  const commentTree = buildCommentTree(commentsRaw || []);
+
+  if (!article) {
     return (
-      <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center">
-        <div className="text-sm text-[#8a8a8a]">加载中...</div>
+      <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center text-[#3d3d3d]">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">文章未找到</h1>
+          <Link href="/" className="text-[#8b7355] hover:underline">← 返回首页</Link>
+        </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
+    <div className="min-h-screen bg-[#f7f4ef] font-wenkai text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold tracking-wider">拾墨杂谈</Link>
-          <Link href={`/article/${id}`} className="text-sm text-[#6b6b6b] hover:text-[#8b7355]">← 返回文章</Link>
+          <Link href="/" className="text-xl font-bold text-[#3d3d3d] tracking-wider">拾墨杂谈</Link>
+          <div className="flex gap-8 text-sm text-[#6b6b6b]">
+            <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
+            <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
+            <Link href="/following" className="hover:text-[#8b7355] transition-colors">关注</Link>
+            <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
+          </div>
         </div>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold mb-8 text-center">编辑文章</h1>
-
-        {error && (
-          <div className="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm mb-2">标题</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required
-              className="w-full p-3 bg-[#fefdfb] border border-[#e8e4dc] rounded-lg text-sm focus:outline-none focus:border-[#8b7355]" />
+        <div className="mb-10 text-center">
+          <div className="inline-block px-3 py-1 text-xs text-[#8b7355] border border-[#e8e4dc] rounded-full mb-4">
+            {article.category}
           </div>
-
-          <div>
-            <label className="block text-sm mb-2">分类</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}
-              className="w-full p-3 bg-[#fefdfb] border border-[#e8e4dc] rounded-lg text-sm focus:outline-none focus:border-[#8b7355]">
-              <option value="散文">散文</option>
-              <option value="随笔">随笔</option>
-              <option value="小说">小说</option>
-              <option value="时评">时评</option>
-              <option value="诗歌">诗歌</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm mb-2">摘要</label>
-            <textarea value={summary} onChange={e => setSummary(e.target.value)} rows={2}
-              className="w-full p-3 bg-[#fefdfb] border border-[#e8e4dc] rounded-lg text-sm focus:outline-none focus:border-[#8b7355] resize-none" />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-2">正文</label>
-            <textarea value={content} onChange={e => setContent(e.target.value)} required rows={20}
-              className="w-full p-4 bg-[#fefdfb] border border-[#e8e4dc] rounded-lg text-sm focus:outline-none focus:border-[#8b7355] resize-y leading-relaxed" />
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <Link href={`/article/${id}`}
-              className="px-6 py-2 border border-[#e8e4dc] text-[#6b6b6b] rounded-lg hover:bg-[#f0ece4] transition-colors text-sm text-center">
-              取消
+          <h1 className="text-3xl font-bold mb-4 tracking-wide">{article.title}</h1>
+          <div className="text-sm text-[#8a8a8a] flex items-center justify-center gap-3 flex-wrap">
+            <Link href={`/user/${encodeURIComponent(article.author)}`} className="hover:text-[#8b7355] transition-colors">
+              {article.author}
             </Link>
-            <button type="submit" disabled={loading}
-              className="px-6 py-2 bg-[#8b7355] text-white rounded-lg hover:bg-[#6b5a45] transition-colors disabled:opacity-50 text-sm">
-              {loading ? '保存中...' : '保存修改'}
-            </button>
+            <span>·</span>
+            <span>{article.date}</span>
+            <span>·</span>
+            <span>{article.views || 0} 次阅读</span>
           </div>
-        </form>
+        </div>
+
+        <article className="bg-[#fefdfb] rounded-lg p-8 md:p-12 shadow-sm mb-8">
+          <div className="prose prose-lg max-w-none whitespace-pre-wrap text-[#3d3d3d] leading-[2] text-base md:text-lg">
+            {article.content}
+          </div>
+        </article>
+
+        <div className="flex items-center justify-center gap-8 mb-8">
+          <LikeButton id={articleId} initialLikes={article.likes || 0} size="md" />
+          <FavoriteButton articleId={articleId} />
+          <ShareButton />
+        </div>
+
+        <ArticleActions article={article} />
+
+        <div className="mb-12 mt-8">
+          <Link href="/" className="inline-flex items-center text-[#8b7355] hover:text-[#6b5a45] transition-colors text-sm">
+            ← 返回首页
+          </Link>
+        </div>
+
+        <div className="bg-[#fefdfb] rounded-lg p-8 shadow-sm">
+          <h3 className="text-lg font-bold mb-6 pb-4 border-b border-[#e8e4dc]">
+            评论 ({commentsRaw?.length || 0})
+          </h3>
+          <div className="space-y-6 mb-8">
+            {commentTree.length > 0 ? (
+              commentTree.map((comment) => (
+                <CommentItem key={comment.id} comment={comment} articleId={articleId} />
+              ))
+            ) : (
+              <div className="text-sm text-[#8a8a8a] text-center py-4">暂无评论</div>
+            )}
+          </div>
+          <CommentForm articleId={articleId} />
+        </div>
       </main>
 
       <footer className="border-t border-[#e8e4dc] bg-[#fefdfb] mt-12">
@@ -142,6 +168,8 @@ export default function EditArticlePage() {
           <p className="mt-2">拾墨杂谈 © 2026</p>
         </div>
       </footer>
+
+      <ScrollToTop />
     </div>
-  )
+  );
 }
