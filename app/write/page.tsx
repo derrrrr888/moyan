@@ -74,7 +74,7 @@ export default function WritePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
+    <div className="min-h-screen bg-[#f7f4ef] font-wenkai text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-wider">拾墨杂谈</Link>

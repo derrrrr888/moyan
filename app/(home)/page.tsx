@@ -127,13 +127,14 @@ function HomeContent() {
   )
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
+    <div className="min-h-screen bg-[#f7f4ef] font-wenkai text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="text-xl font-bold tracking-wider">拾墨杂谈</div>
           <div className="flex items-center gap-8 text-sm text-[#6b6b6b]">
-            <span className="text-[#8b7355] font-medium">首页</span>
+          <span className="text-[#8b7355] font-medium">首页</span>
             <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
+            <Link href="/following" className="hover:text-[#8b7355] transition-colors">关注</Link>
             <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
             <AuthButton />
           </div>

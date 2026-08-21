@@ -45,7 +45,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] flex items-center justify-center px-6">
+    <div className="min-h-screen bg-[#f7f4ef] font-wenkai text-[#3d3d3d] flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <Link href="/" className="text-2xl font-bold tracking-wider">拾墨杂谈</Link>

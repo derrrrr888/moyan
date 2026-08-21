@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import FollowButton from "../../components/FollowButton";
 
 export default async function UserPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
@@ -30,7 +31,10 @@ export default async function UserPage({ params }: { params: Promise<{ name: str
           {authorName[0]}
         </div>
         <h1 className="text-2xl font-bold mb-2">{authorName}</h1>
-        <p className="text-sm text-[#8a8a8a]">共 {articles?.length || 0} 篇作品</p>
+        <div className="flex items-center justify-center gap-4 text-sm text-[#8a8a8a] mb-4">
+          <span>共 {articles?.length || 0} 篇作品</span>
+        </div>
+        <FollowButton targetName={authorName} />
       </header>
 
       <main className="max-w-3xl mx-auto px-6 pb-16">

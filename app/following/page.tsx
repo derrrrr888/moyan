@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 
-export default function FavoritesPage() {
+export default function FollowingPage() {
   const [articles, setArticles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -13,36 +13,28 @@ export default function FavoritesPage() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+      const userName = session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0]
+      if (!userName) {
         router.push('/login')
         return
       }
 
-      const { data: favs, error: favError } = await supabase
-        .from('favorites')
-        .select('article_id')
-        .eq('user_id', session.user.id)
-
-      if (favError) {
-        console.error('收藏查询出错:', favError)
+      const { data: follows } = await supabase.from('follows').select('following_name').eq('follower_name', userName)
+      if (!follows || follows.length === 0) {
+        setArticles([])
         setLoading(false)
         return
       }
 
-      if (favs && favs.length > 0) {
-        const ids = favs.map(f => f.article_id)
-        const { data, error } = await supabase
-          .from('articles')
-          .select('*')
-          .in('id', ids)
-          .eq('is_hidden', false)
-          .order('date', { ascending: false })
-        
-        if (error) console.error('文章查询出错:', error)
-        setArticles(data || [])
-      } else {
-        setArticles([])
-      }
+      const names = follows.map(f => f.following_name)
+      const { data } = await supabase
+        .from('articles')
+        .select('*')
+        .in('author', names)
+        .eq('is_hidden', false)
+        .order('date', { ascending: false })
+
+      setArticles(data || [])
       setLoading(false)
     }
     load()
@@ -53,13 +45,18 @@ export default function FavoritesPage() {
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-wider">拾墨杂谈</Link>
-          <Link href="/" className="text-sm text-[#6b6b6b] hover:text-[#8b7355]">← 返回首页</Link>
+          <div className="flex gap-8 text-sm text-[#6b6b6b]">
+            <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
+            <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
+            <span className="text-[#8b7355] font-medium">关注</span>
+            <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
+          </div>
         </div>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold mb-2">我的收藏</h1>
-        <p className="text-sm text-[#8a8a8a] mb-8">共 {articles.length} 篇收藏</p>
+        <h1 className="text-2xl font-bold mb-2">我的关注</h1>
+        <p className="text-sm text-[#8a8a8a] mb-8">关注作者的最新文章</p>
 
         {loading ? (
           <div className="text-center text-[#8a8a8a] py-12">加载中...</div>
@@ -86,8 +83,8 @@ export default function FavoritesPage() {
           </div>
         ) : (
           <div className="text-center text-[#8a8a8a] py-12">
-            <p>暂无收藏</p>
-            <Link href="/" className="text-[#8b7355] hover:underline text-sm mt-2 inline-block">去首页看看 →</Link>
+            <p>暂无关注内容</p>
+            <Link href="/" className="text-[#8b7355] hover:underline text-sm mt-2 inline-block">去首页发现作者 →</Link>
           </div>
         )}
       </main>
