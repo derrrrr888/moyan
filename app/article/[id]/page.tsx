@@ -95,19 +95,20 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] font-['Noto_Serif_SC','Source_Han_Serif_SC',serif] text-[#3d3d3d] leading-[1.8]">
+    <div className="min-h-screen bg-[#f7f4ef] font-wenkai text-[#3d3d3d] leading-[1.8]">
       <nav className="border-b border-[#e8e4dc] bg-[#fefdfb]">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-[#3d3d3d] tracking-wider">拾墨杂谈</Link>
           <div className="flex gap-8 text-sm text-[#6b6b6b]">
             <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
             <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
+            <Link href="/following" className="hover:text-[#8b7355] transition-colors">关注</Link>
             <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-<main className="max-w-3xl mx-auto px-6 py-12 content-reveal"></div>12">
+      <main className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-10 text-center">
           <div className="inline-block px-3 py-1 text-xs text-[#8b7355] border border-[#e8e4dc] rounded-full mb-4">
             {article.category}
