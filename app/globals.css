@@ -1,153 +1,30 @@
 @import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 墨迹晕染加载动画 */
+@keyframes ink-press {
+  0% { transform: scale(0); opacity: 0.4; }
+  100% { transform: scale(3); opacity: 0; }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.article-ink {
+  position: relative;
+  overflow: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, #f0ece4 25%, #fefdfb 50%, #f0ece4 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-/* ========== 页面进入动画 ========== */
-@keyframes page-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-page-enter {
-  animation: page-enter 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ========== 按钮/交互元素全局过渡 ========== */
-button,
-input[type="submit"],
-input[type="button"] {
-  transition-property: color, background-color, border-color, transform, box-shadow, filter;
-  transition-duration: 0.2s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-/* 主要按钮（棕色背景）悬浮效果：变亮+上浮+阴影 */
-button[class*="bg-[#8b7355]"]:hover,
-input[class*="bg-[#8b7355]"]:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(139, 115, 85, 0.25);
-}
-
-/* 边框按钮悬浮效果：边框和文字变棕 */
-button[class*="border-[#e8e4dc]"]:hover,
-a[class*="border-[#e8e4dc]"]:hover {
-  border-color: #8b7355;
-  color: #8b7355;
-  background-color: #f7f4ef;
-}
-
-/* 所有按钮点击下沉效果 */
-button:active,
-input[type="submit"]:active {
-  transform: translateY(0) scale(0.97);
-}
-
-/* 链接颜色过渡更丝滑 */
-a {
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-}
-/* ========== 墨迹晕染加载动画 ========== */
-@keyframes ink-spread {
-  0% {
-    opacity: 0;
-    transform: scaleX(0.15);
-    transform-origin: left;
-  }
-  50% {
-    opacity: 0.55;
-  }
-  100% {
-    opacity: 0.35;
-    transform: scaleX(1);
-  }
-}
-
-@keyframes fade-up {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 骨架屏元素依次晕染 */
-.ink-line {
-  animation: ink-spread 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  opacity: 0;
-}
-
-/* 内容进入 */
-.content-reveal {
-  animation: fade-up 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-/* ========== 水墨按住扩散动画 ========== */
-@keyframes ink-ripple {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.35;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(4);
-    opacity: 0;
-  }
-}
-
-.ink-ripple {
+.article-ink:active::after {
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(139,115,85,0.25) 0%, rgba(139,115,85,0) 70%);
+  background: radial-gradient(circle, rgba(139,115,85,0.4) 0%, transparent 70%);
+  animation: ink-press 0.5s ease-out forwards;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-}
-
-.ink-ripple.active {
-  animation: ink-ripple 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
