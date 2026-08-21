@@ -1,5 +1,9 @@
+export const dynamic = 'force-static';
+export const revalidate = 3600;
+
 import Link from "next/link";
 import { Metadata } from "next";
+import { unstable_cache } from 'next/cache';
 import { supabase } from "../../lib/supabase";
 import CommentForm from "../../components/CommentForm";
 import LikeButton from "../../components/LikeButton";
@@ -9,8 +13,6 @@ import FavoriteButton from "../../components/FavoriteButton";
 import ShareButton from "../../components/ShareButton";
 import ScrollToTop from "../../components/ScrollToTop";
 
-export const revalidate = 60;
-
 export async function generateStaticParams() {
   const { data: articles } = await supabase.from("articles").select("id").eq("is_hidden", false);
   return (articles || []).map((a) => ({ id: String(a.id) }));
@@ -19,13 +21,17 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const articleId = parseInt(id);
-  const { data: article } = await supabase
-    .from("articles")
-    .select("title,summary")
-    .eq("id", articleId)
-    .eq("is_hidden", false)
-    .single();
-
+  
+  const getArticle = unstable_cache(
+    async (id: number) => {
+      const { data } = await supabase.from("articles").select("title,summary").eq("id", id).eq("is_hidden", false).single();
+      return data;
+    },
+    ['article-meta'],
+    { revalidate: 3600 }
+  );
+  
+  const article = await getArticle(articleId);
   if (!article) return { title: "文章未找到 | 拾墨杂谈" };
   return { title: article.title, description: article.summary };
 }
@@ -48,13 +54,29 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const articleId = parseInt(id);
 
-  // 并行查询：文章 + 评论同时拉取
-  const [{ data: article }, { data: commentsRaw }] = await Promise.all([
-    supabase.from("articles").select("*").eq("id", articleId).eq("is_hidden", false).single(),
-    supabase.from("comments").select("*").eq("article_id", articleId).eq("is_hidden", false).order("date", { ascending: true })
+  const getArticle = unstable_cache(
+    async (id: number) => {
+      const { data } = await supabase.from("articles").select("*").eq("id", id).eq("is_hidden", false).single();
+      return data;
+    },
+    ['article-detail'],
+    { revalidate: 3600 }
+  );
+
+  const getComments = unstable_cache(
+    async (id: number) => {
+      const { data } = await supabase.from("comments").select("*").eq("article_id", id).eq("is_hidden", false).order("date", { ascending: true });
+      return data;
+    },
+    ['article-comments'],
+    { revalidate: 60 }
+  );
+
+  const [article, commentsRaw] = await Promise.all([
+    getArticle(articleId),
+    getComments(articleId),
   ]);
 
-  // 浏览量+1 纯后台，不阻塞不等待
   if (article) {
     supabase.from("articles").update({ views: (article.views || 0) + 1 }).eq("id", articleId).then(() => {}).catch(() => {});
   }
