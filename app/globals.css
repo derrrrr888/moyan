@@ -28,3 +28,13 @@
   animation: ink-press 0.5s ease-out forwards;
   pointer-events: none;
   /* force rebuild */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  .animate-shimmer {
+    background: linear-gradient(90deg, #f0ece4 25%, #fefdfb 50%, #f0ece4 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }

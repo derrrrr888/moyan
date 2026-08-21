@@ -102,7 +102,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
           <div className="flex gap-8 text-sm text-[#6b6b6b]">
             <Link href="/" className="hover:text-[#8b7355] transition-colors">首页</Link>
             <Link href="/categories" className="hover:text-[#8b7355] transition-colors">分类</Link>
-            <Link href="/following" className="hover:text-[#8b7355] transition-colors">关注</Link>
             <Link href="/about" className="hover:text-[#8b7355] transition-colors">关于</Link>
           </div>
         </div>
