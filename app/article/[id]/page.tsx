@@ -78,7 +78,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
   ]);
 
   if (article) {
-    supabase.from("articles").update({ views: (article.views || 0) + 1 }).eq("id", articleId).then(() => {}).catch(() => {});
+    void supabase.from("articles").update({ views: (article.views || 0) + 1 }).eq("id", articleId);
   }
 
   const commentTree = buildCommentTree(commentsRaw || []);
