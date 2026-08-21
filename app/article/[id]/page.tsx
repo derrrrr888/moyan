@@ -51,11 +51,14 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
     .eq("is_hidden", false)
     .single();
 
-  if (article) {
-    await supabase
+   // 浏览量+1 放到后台，不阻塞页面加载
+   if (article) {
+    supabase
       .from("articles")
       .update({ views: (article.views || 0) + 1 })
-      .eq("id", articleId);
+      .eq("id", articleId)
+      .then(() => {})
+      .catch(() => {});
   }
 
   const { data: updatedArticle } = await supabase
